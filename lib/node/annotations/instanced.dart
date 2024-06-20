@@ -1,0 +1,3 @@
+class Instanced {
+  const Instanced();
+}

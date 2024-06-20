@@ -9,6 +9,10 @@ dependencies:
   synchronized: ^3.1.0+1
   thread: ^0.2.2
   toxic: ^1.0.4
+  curse: ^1.0.3
+  chat_color: ^1.0.0
+  color: ^3.0.0
+  precision_stopwatch: ^1.0.2
 dev_dependencies:
   lints: ^3.0.0
   test: ^1.24.0
