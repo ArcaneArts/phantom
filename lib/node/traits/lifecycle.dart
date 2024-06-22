@@ -47,15 +47,5 @@ abstract class Lifecycle implements Trait {
 }
 
 extension XLifecycle on Lifecycle {
-  Future<void> shallowRestart() async {
-    NodeStorage storage = (this as Node).$pool?.storage ?? DummyNodeStorage();
-    PrecisionStopwatch p = PrecisionStopwatch.start();
-    await Lifecycle.$callStop(this as Node, storage, p);
-    await Lifecycle.$callStart(
-        this as Node, storage, PrecisionStopwatch.start());
-    (this as Node).logger.success(
-        "Shallow Restarted in ${p.getMilliseconds().toStringAsFixed(0)}ms");
-  }
-
   bool get $isRunning => (this as Node).$metadata["lifecycle.running"] ?? false;
 }

@@ -4,6 +4,7 @@ import 'package:chat_color/chat_color.dart';
 import 'package:color/color.dart';
 
 class PLogger {
+  static List<String> modifiers = [];
   final String nodeName;
   final String _header;
   String get _fgc => trueColorTrigger;
@@ -13,7 +14,7 @@ class PLogger {
 
   void log(Object message, {String prefix = "", int indent = 0}) {
     print(
-        "${indent > 0 ? " " * indent : ""}$_header${"$prefix$message".chatColor}");
+        "${modifiers.map((i) => i.chatColor).join("")}${indent > 0 ? " " * indent : ""}$_header${"$prefix$message".chatColor}");
   }
 
   void announcement(

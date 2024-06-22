@@ -1,8 +1,10 @@
 import 'package:phantom/node/node.dart';
 import 'package:phantom/node/storage.dart';
 import 'package:phantom/node/trait.dart';
-import 'package:phantom/node/traits/hotloadable.dart';
+import 'package:phantom/util/logger.dart';
 import 'package:precision_stopwatch/precision_stopwatch.dart';
+
+const String _hlk = "@(#c2fc03) &r ";
 
 /// Designates a node as Stateful, meaning it can save and load its state.
 /// You are responsible for implementing load / save state methods.
@@ -13,7 +15,7 @@ abstract class Stateful implements Trait {
   /// Called when the node needs to load its state from storage.
   /// After startup, your state will be saved again so feel free to
   /// modify your node for assuming defaults if needed.
-  Future<void> onLoad(Map<String, dynamic> state);
+  Future<void> onLoad(Map<String, dynamic> state, {bool hotloaded = false});
 
   static Future<void> $callSave(
       Node node, NodeStorage storage, PrecisionStopwatch wallClock) async {
@@ -30,23 +32,19 @@ abstract class Stateful implements Trait {
   static Future<void> $callLoad(
       Node node, NodeStorage storage, PrecisionStopwatch wallClock,
       {bool hotload = false}) async {
-    if (hotload && node is Hotloadable && node is Stateful) {
-      Stateful s = node as Stateful;
-      Hotloadable h = node as Hotloadable;
-      s._storage = storage;
-      PrecisionStopwatch p = PrecisionStopwatch.start();
-      await h.onHotload(await storage.read(s));
-      node.logger.verbose(
-          "Hotloaded State in ${p.getMilliseconds().toStringAsFixed(0)}ms");
-    }
-
     if (node is Stateful) {
+      if (hotload) {
+        PLogger.modifiers.add(_hlk);
+      }
       Stateful s = node as Stateful;
       s._storage = storage;
       PrecisionStopwatch p = PrecisionStopwatch.start();
-      await s.onLoad(await storage.read(s));
+      await s.onLoad(await storage.read(s), hotloaded: hotload);
       node.logger.verbose(
           "Loaded State in ${p.getMilliseconds().toStringAsFixed(0)}ms");
+      if (hotload) {
+        PLogger.modifiers.remove(_hlk);
+      }
     }
   }
 }

@@ -62,6 +62,13 @@ class NodePool {
     return work.length;
   }
 
+  Future<void> restart(Node node) async {
+    Object? tag = node.$tag;
+    bool root = node.$rootNode;
+    await removeNodeExplicit(node);
+    await addOrGetNode(node.runtimeType, tag: tag, root: root);
+  }
+
   Future<void> removeNodeExplicit(Node n) =>
       _lockFor(n.runtimeType, tag: n.$tag).synchronized(() async {
         PrecisionStopwatch p = PrecisionStopwatch.start();
@@ -75,6 +82,9 @@ class NodePool {
           await f(n, storage, p);
         }
       }).then((_) => gc());
+
+  Future<void> shutdown() =>
+      Future.wait(nodes.where((i) => i.$rootNode).map((i) => i.destroy()));
 
   Future<void> removeNode(Type node, {Object? tag}) =>
       _lockFor(node, tag: tag).synchronized(() async {
@@ -94,10 +104,7 @@ class NodePool {
       }).then((_) => gc());
 
   Future<Node> addOrGetNode(Type nodeType,
-          {Object? tag,
-          bool root = false,
-          int depth = 0,
-          bool locking = true}) =>
+          {Object? tag, bool root = false, int depth = 0}) =>
       _lockFor(nodeType, tag: tag).synchronized(() async {
         Node? existing = getNode(nodeType, tag: tag);
         bool instanced = Node.$nodeAnnotation<Instanced>(nodeType) != null;

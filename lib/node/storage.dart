@@ -21,8 +21,8 @@ class FileConfigJSONNodeSettings extends ReloadableNodeStorage {
   final List<String> ignore = [];
 
   FileConfigJSONNodeSettings({Directory? directory}) {
-    configDirectory =
-        directory ?? Directory("${Directory.current.path}/config");
+    configDirectory = directory ??
+        Directory("${Directory.current.path}${Platform.pathSeparator}config");
     logger.info("Using config directory ${configDirectory.path}");
     if (!configDirectory.existsSync()) {
       configDirectory.createSync(recursive: true);
@@ -89,6 +89,7 @@ abstract class ReloadableNodeStorage extends NodeStorage {
   final Map<String, List<Stateful>> _listeners = {};
 
   void onChangeAt(String path) {
+    $cleanupListeners();
     for (List<Stateful> l in _listeners.values) {
       for (Stateful n in l) {
         Stateful.$callLoad(n as Node, this, PrecisionStopwatch.start(),

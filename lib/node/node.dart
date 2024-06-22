@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:chat_color/chat_color.dart';
@@ -5,6 +6,7 @@ import 'package:curse/curse.dart';
 import 'package:phantom/node/pool.dart';
 import 'package:phantom/node/trait.dart';
 import 'package:phantom/util/logger.dart';
+import 'package:reflect_buddy/reflect_buddy.dart';
 
 mixin class Node {
   PLogger? _logger;
@@ -17,12 +19,29 @@ mixin class Node {
   /// The tag of the node.
   Object? $tag;
 
+  Map<String, dynamic> get $json => toJson() as Map<String, dynamic>;
+
   NodePool? $pool;
 
   bool get $isActive =>
       $pool != null && $pool!.nodes.any((i) => identical(i, this));
 
   int $referenceCount = 0;
+
+  String? get $sourceFile =>
+      reflectClass(runtimeType).location?.sourceUri.toString();
+
+  String? get $sourceCodeFile {
+    String? p = $sourceFile;
+
+    if (p == null) {
+      return null;
+    }
+
+    return "${Directory.current.path}${Platform.pathSeparator}lib${Platform.pathSeparator}${p.split("/").sublist(1).join(Platform.pathSeparator)}";
+  }
+
+  Future<void> restart() => $pool!.restart(this);
 
   bool get $hasReferences => $referenceCount > 0;
 
