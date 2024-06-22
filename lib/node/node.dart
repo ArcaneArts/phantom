@@ -50,6 +50,11 @@ mixin class Node {
 
   Future<void> destroy() => $pool!.removeNodeExplicit(this);
 
+  Future<Future<void> Function()> destroyWithStarter() async {
+    await $pool!.removeNodeExplicit(this);
+    return () => $pool!.addOrGetNode(runtimeType, tag: $tag, root: $rootNode);
+  }
+
   Future<void> destroyAllOfTypeAndTag() =>
       $pool!.removeNode(runtimeType, tag: $tag);
 

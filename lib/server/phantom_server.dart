@@ -9,10 +9,10 @@ const String _sk = "@(#03fc6b) &r ";
 
 class PhantomServer {
   final Type root;
-  late final PrecisionStopwatch clock;
-  late final PLogger logger;
-  late final NodeStorage? storage;
-  late final NodePool pool;
+  late PrecisionStopwatch clock;
+  late PLogger logger;
+  late NodeStorage? storage;
+  late NodePool pool;
   late HotReloader? _reloader;
   late PLogger _reloadLogger;
 
@@ -29,6 +29,7 @@ class PhantomServer {
   Future<void> start() async {
     PrecisionStopwatch hotloadClock = PrecisionStopwatch.start();
     List<Node>? hotloadNodes;
+    Future<List<Future<void> Function()>>? waiter;
     await pool.start(root);
     String hlk = "@(#db03fc) &r ";
     _reloader = await HotReloader.create(
@@ -46,6 +47,8 @@ class PhantomServer {
             _reloadLogger
                 .info("HotReloading ${hotloadNodes!.length} nodes: $names");
             PLogger.modifiers.add(hlk);
+            waiter =
+                Future.wait(hotloadNodes!.map((i) => i.destroyWithStarter()));
 
             return true;
           }
@@ -65,8 +68,7 @@ class PhantomServer {
               _reloadLogger.warn(
                   "HotReload partially succeeded. Some nodes may not have been reloaded.");
             case HotReloadResult.Succeeded:
-              await Future.wait(hotloadNodes!.map((i) => i.restart()))
-                  .then((v) {});
+              await Future.wait((await (waiter!)).map(((i) => i())));
               PLogger.modifiers.remove(hlk);
               _reloadLogger.success(
                   "HotReload succeeded in ${hotloadClock.getMilliseconds().toStringAsFixed(0)}ms.");
