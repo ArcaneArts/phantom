@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:mirrors';
 
 import 'package:curse/curse.dart';
 import 'package:phantom/node/annotations/instanced.dart';
@@ -8,6 +9,7 @@ import 'package:phantom/node/storage.dart';
 import 'package:phantom/node/traits/lifecycle.dart';
 import 'package:phantom/node/traits/stateful.dart';
 import 'package:phantom/node/traits/ticked.dart';
+import 'package:phantom/node/traits/web_server.dart';
 import 'package:phantom/util/logger.dart';
 import 'package:precision_stopwatch/precision_stopwatch.dart';
 import 'package:synchronized/synchronized.dart';
@@ -30,11 +32,16 @@ class NodePool {
     Stateful.$callLoad,
     Lifecycle.$callStart,
     Stateful.$callSave,
-    Ticked.$startTicking
+    Ticked.$startTicking,
+    WebServer.$callWebServerStart
   ];
 
   final List<Future<void> Function(Node, NodeStorage, PrecisionStopwatch)>
-      onStopPipeline = [Lifecycle.$callStop, Stateful.$callSave];
+      onStopPipeline = [
+    WebServer.$callWebServerStop,
+    Lifecycle.$callStop,
+    Stateful.$callSave
+  ];
 
   Map<String, Lock> locks = {};
   List<Node> nodes = [];
@@ -73,8 +80,14 @@ class NodePool {
       _lockFor(n.runtimeType, tag: n.$tag).synchronized(() async {
         PrecisionStopwatch p = PrecisionStopwatch.start();
         nodes.removeWhere((i) => identical(i, n));
-        for (CursedField f in n.$dependencyFields()) {
-          f.value.$referenceCount--;
+        for (VariableMirror f in n.$dependencyFields()) {
+          reflect(n).getField(f.simpleName).setField(
+              #$referenceCount,
+              (reflect(n)
+                      .getField(f.simpleName)
+                      .getField(#$referenceCount)
+                      .reflectee as int) -
+                  1);
         }
 
         for (Future<void> Function(Node, NodeStorage, PrecisionStopwatch) f
@@ -92,8 +105,14 @@ class NodePool {
         if (n != null) {
           PrecisionStopwatch p = PrecisionStopwatch.start();
           nodes.removeWhere((i) => identical(i, n));
-          for (CursedField f in n.$dependencyFields()) {
-            f.value.$referenceCount--;
+          for (VariableMirror f in n.$dependencyFields()) {
+            reflect(n).getField(f.simpleName).setField(
+                #$referenceCount,
+                (reflect(n)
+                        .getField(f.simpleName)
+                        .getField(#$referenceCount)
+                        .reflectee as int) -
+                    1);
           }
 
           for (Future<void> Function(Node, NodeStorage, PrecisionStopwatch) f
@@ -124,11 +143,17 @@ class NodePool {
           existing.$rootNode = root;
           List<Future> work = [];
 
-          for (CursedField f in existing.$dependencyFields()) {
-            Object? tag = f.getAnnotation<Tag>()?.value;
-            work.add(addOrGetNode(f.type, tag: tag, depth: depth + 1).then((d) {
+          for (VariableMirror f in existing.$dependencyFields()) {
+            Object? tag = (f.metadata
+                    .where((m) => m.reflectee is Tag)
+                    .map((m) => m.reflectee as Tag)
+                    .firstOrNull)
+                ?.value;
+            work.add(
+                addOrGetNode(f.type.reflectedType, tag: tag, depth: depth + 1)
+                    .then((d) {
               d.$referenceCount++;
-              f.value = d;
+              reflect(existing).setField(f.simpleName, d);
             }));
           }
 

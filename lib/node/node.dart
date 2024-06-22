@@ -80,8 +80,26 @@ mixin class Node {
 
   static bool $hasTraitOf(Type t, Type trait) => $traitsOf(t).contains(trait);
 
-  Iterable<CursedField> $dependencyFields() => cursed.fields
-      .where((f) => reflectType(f.type).isAssignableTo(reflectType(Node)));
+  Iterable<VariableMirror> $dependencyFields() =>
+      $allInstanceFields().where((f) =>
+          f.type.reflectedType != Node &&
+          f.type.reflectedType != Object &&
+          reflectType(f.type.reflectedType).isAssignableTo(reflectType(Node)));
+
+  Iterable<VariableMirror> $allInstanceFields([Type? type]) sync* {
+    type ??= runtimeType;
+
+    yield* reflectClass(type)
+        .declarations
+        .values
+        .where((i) => i is VariableMirror && !i.isStatic)
+        .map((i) => i as VariableMirror);
+
+    ClassMirror? c = reflectClass(type).superclass;
+    if (c != null) {
+      yield* $allInstanceFields(c.reflectedType);
+    }
+  }
 
   /// Returns whether this node has the given trait.
   bool $hasTrait(Type trait) => $traits.contains(trait);
