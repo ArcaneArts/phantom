@@ -2,6 +2,7 @@ import 'dart:mirrors';
 
 import 'package:chat_color/chat_color.dart';
 import 'package:curse/curse.dart';
+import 'package:phantom/node/pool.dart';
 import 'package:phantom/node/trait.dart';
 import 'package:phantom/util/logger.dart';
 
@@ -16,12 +17,22 @@ mixin class Node {
   /// The tag of the node.
   Object? $tag;
 
+  NodePool? $pool;
+
+  bool get $isActive =>
+      $pool != null && $pool!.nodes.any((i) => identical(i, this));
+
   int $referenceCount = 0;
 
   bool get $hasReferences => $referenceCount > 0;
 
   /// The name of the node. You can use &4chat &(#FF00FF)colors here.
   String get nodeName => "$runtimeType";
+
+  Future<void> destroy() => $pool!.removeNodeExplicit(this);
+
+  Future<void> destroyAllOfTypeAndTag() =>
+      $pool!.removeNode(runtimeType, tag: $tag);
 
   /// Returns the logger for this node.
   PLogger get logger => _logger ??=

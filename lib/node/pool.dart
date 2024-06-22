@@ -7,6 +7,7 @@ import 'package:phantom/node/node.dart';
 import 'package:phantom/node/storage.dart';
 import 'package:phantom/node/traits/lifecycle.dart';
 import 'package:phantom/node/traits/stateful.dart';
+import 'package:phantom/node/traits/ticked.dart';
 import 'package:phantom/util/logger.dart';
 import 'package:precision_stopwatch/precision_stopwatch.dart';
 import 'package:synchronized/synchronized.dart';
@@ -28,7 +29,8 @@ class NodePool {
       onStartPipeline = [
     Stateful.$callLoad,
     Lifecycle.$callStart,
-    Stateful.$callSave
+    Stateful.$callSave,
+    Ticked.$startTicking
   ];
 
   final List<Future<void> Function(Node, NodeStorage, PrecisionStopwatch)>
@@ -59,6 +61,20 @@ class NodePool {
 
     return work.length;
   }
+
+  Future<void> removeNodeExplicit(Node n) =>
+      _lockFor(n.runtimeType, tag: n.$tag).synchronized(() async {
+        PrecisionStopwatch p = PrecisionStopwatch.start();
+        nodes.removeWhere((i) => identical(i, n));
+        for (CursedField f in n.$dependencyFields()) {
+          f.value.$referenceCount--;
+        }
+
+        for (Future<void> Function(Node, NodeStorage, PrecisionStopwatch) f
+            in onStopPipeline) {
+          await f(n, storage, p);
+        }
+      }).then((_) => gc());
 
   Future<void> removeNode(Type node, {Object? tag}) =>
       _lockFor(node, tag: tag).synchronized(() async {
@@ -91,6 +107,7 @@ class NodePool {
           existing = Curse.clazz(nodeType).constructors.first.construct();
 
           nodes.add(existing!);
+          existing.$pool = this;
 
           if (root) {
             logger ??= existing.logger;

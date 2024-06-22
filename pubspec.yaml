@@ -13,6 +13,7 @@ dependencies:
   chat_color: ^1.0.0
   color: ^3.0.0
   precision_stopwatch: ^1.0.2
+  watcher: ^1.1.0
 dev_dependencies:
   lints: ^3.0.0
   test: ^1.24.0
