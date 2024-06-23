@@ -101,6 +101,21 @@ mixin class Node {
     }
   }
 
+  Iterable<MethodMirror> $allInstanceMethods([Type? type]) sync* {
+    type ??= runtimeType;
+
+    yield* reflectClass(type)
+        .declarations
+        .values
+        .where((i) => i is MethodMirror && !i.isStatic)
+        .map((i) => i as MethodMirror);
+
+    ClassMirror? c = reflectClass(type).superclass;
+    if (c != null) {
+      yield* $allInstanceMethods(c.reflectedType);
+    }
+  }
+
   /// Returns whether this node has the given trait.
   bool $hasTrait(Type trait) => $traits.contains(trait);
 
