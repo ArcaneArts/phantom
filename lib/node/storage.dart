@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:phantom/node/node.dart';
-import 'package:phantom/node/traits/lifecycle.dart';
-import 'package:phantom/node/traits/stateful.dart';
-import 'package:phantom/util/logger.dart';
+import 'package:phantom/phantom.dart';
 import 'package:precision_stopwatch/precision_stopwatch.dart';
 import 'package:watcher/watcher.dart';
 
@@ -15,12 +12,13 @@ abstract class NodeStorage {
 }
 
 class FileConfigJSONNodeSettings extends ReloadableNodeStorage {
+  final bool reloadable;
   final PLogger logger = PLogger("&eFSJ");
   late final Directory configDirectory;
   late final Watcher watcher;
   final List<String> ignore = [];
 
-  FileConfigJSONNodeSettings({Directory? directory}) {
+  FileConfigJSONNodeSettings({Directory? directory, this.reloadable = true}) {
     configDirectory = directory ??
         Directory("${Directory.current.path}${Platform.pathSeparator}config");
     logger.info("Using config directory ${configDirectory.path}");
@@ -28,21 +26,23 @@ class FileConfigJSONNodeSettings extends ReloadableNodeStorage {
       configDirectory.createSync(recursive: true);
       logger.verbose("Created config directory ${configDirectory.path}");
     }
-    watcher = Watcher(configDirectory.path);
-    watcher.events.listen((event) {
-      String path = event.path.replaceAll("\\", "/");
-      if (event.type == ChangeType.MODIFY) {
-        if (ignore.contains(path)) {
-          ignore.remove(path);
-          return;
-        }
+    if (PhantomServer.instance.reloadable && reloadable) {
+      watcher = Watcher(configDirectory.path);
+      watcher.events.listen((event) {
+        String path = event.path.replaceAll("\\", "/");
+        if (event.type == ChangeType.MODIFY) {
+          if (ignore.contains(path)) {
+            ignore.remove(path);
+            return;
+          }
 
-        logger.verbose("Config Change detected at $path");
-        onChangeAt(path);
-      } else if (event.type == ChangeType.REMOVE) {
-        logger.verbose("Config removed at $path");
-      }
-    });
+          logger.verbose("Config Change detected at $path");
+          onChangeAt(path);
+        } else if (event.type == ChangeType.REMOVE) {
+          logger.verbose("Config removed at $path");
+        }
+      });
+    }
   }
 
   File _fileFor(Stateful node) =>
