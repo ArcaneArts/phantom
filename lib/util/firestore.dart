@@ -1,7 +1,6 @@
 import 'package:fire_api/fire_api.dart';
 import 'package:fire_api_dart/fire_api_dart.dart';
-import 'package:phantom/node/node.dart';
-import 'package:phantom/node/traits/lifecycle.dart';
+import 'package:phantom/phantom.dart';
 
 /// To use Firestore in your Phantom server, you need to either make sure
 /// you are running in a google cloud environment or provide a service account key file.
@@ -23,7 +22,13 @@ class Firestore with Node implements Lifecycle {
   @override
   Future<void> onStart() async {
     _db = await GoogleCloudFirestoreDatabase.create();
-    logger.info("Firestore Database Online");
+    PLogger.modifiers.add("@(#f5d442) &r ");
+    logger.verbose(
+        "Project ID: &f${(_db as GoogleCloudFirestoreDatabase).project}");
+    logger.verbose(
+        "Database: &f${(_db as GoogleCloudFirestoreDatabase).database}");
+    PLogger.modifiers.remove("@(#f5d442) &r ");
+    logger.verbose("Firestore Database &aOnline");
   }
 
   @override

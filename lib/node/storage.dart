@@ -26,7 +26,7 @@ class FileConfigJSONNodeSettings extends ReloadableNodeStorage {
       configDirectory.createSync(recursive: true);
       logger.verbose("Created config directory ${configDirectory.path}");
     }
-    if (PhantomServer.instance.reloadable && reloadable) {
+    if (reloadable) {
       watcher = Watcher(configDirectory.path);
       watcher.events.listen((event) {
         String path = event.path.replaceAll("\\", "/");
