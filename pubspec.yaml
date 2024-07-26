@@ -5,6 +5,7 @@ repository: https://github.com/ArcaneArts/phantom
 environment:
   sdk: ^3.4.1
 dependencies:
+  reflectable: ^4.0.9
   google_cloud: ^0.2.0
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
@@ -26,7 +27,7 @@ dependencies:
   reflect_buddy: ^1.4.2
   hotreloader: ^4.2.0
   args: ^2.5.0
-  fire_api: ^1.1.9+3
+  fire_api: ^1.1.9+4
   fire_api_dart: ^1.1.5+2
   fire_crud: ^2.1.13
 dev_dependencies:
