@@ -1,11 +1,10 @@
 name: phantom
 description: The torch of black flames continues to burn
-version: 1.0.3
+version: 1.0.4
 repository: https://github.com/ArcaneArts/phantom
 environment:
   sdk: ^3.4.1
 dependencies:
-  reflectable: ^4.0.9
   google_cloud: ^0.2.0
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
